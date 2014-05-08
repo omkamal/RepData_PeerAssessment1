@@ -282,9 +282,14 @@ plot(y = interval_means$x, type = &quot;l&quot;, x = interval_means$Group.1, xla
 interval_max &lt;- interval_means[which.max(interval_means$x), 1]
 </code></pre>
 
+<h3>Maximum highest average steps accross all days</h3>
+
 <p>The 5-minute interval, that have the <strong>highest average</strong> across all the days in the dataset, is interval <strong>835</strong></p>
 
 <h2>Imputing missing values</h2>
+
+<p>The strategy for imputing missing values is to fill in missing steps in a certain interval with the <strong>mean</strong> steps computed for the same interval across all days.<br/>
+That is done using the <strong>apply</strong> command.</p>
 
 <pre><code class="r">no_missing_values &lt;- sum(is.na(raw_data$steps))
 # filling missing intervals with mean

@@ -115,9 +115,13 @@ interval_max <- interval_means[which.max(interval_means$x), 1]
 ```
 
 
+### Maximum highest average steps accross all days
 The 5-minute interval, that have the __highest average__ across all the days in the dataset, is interval __835__
 
 ## Imputing missing values
+The strategy for imputing missing values is to fill in missing steps in a certain interval with the __mean__ steps computed for the same interval across all days.  
+That is done using the __apply__ command.
+
 
 ```r
 no_missing_values <- sum(is.na(raw_data$steps))
