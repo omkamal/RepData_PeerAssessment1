@@ -1,0 +1,108 @@
+# Reproducible Research: Peer Assessment 1
+
+
+## Loading and preprocessing the data
+```{r}
+setwd("C:/Users/okamal.MGC/Documents/GitHub/RepData_PeerAssessment1")
+raw_data <- read.csv("./activity.csv")
+raw_data$date <- as.Date(raw_data$date,format="%Y-%m-%d")
+```
+
+
+
+## What is mean total number of steps taken per day?
+```{r}
+table_means <- aggregate(raw_data$steps,list(raw_data$date),FUN=mean)
+table_median <- aggregate(raw_data$steps,list(raw_data$date),FUN=median)
+table_sum_steps_per_day <-  aggregate(raw_data$steps,list(raw_data$date),FUN=sum)
+hist(table_sum_steps_per_day$x,main="Histogram of sum of steps per day",xlab="Steps per day")
+final_table <- data.frame(date=table_means$Group.1,mean=table_means$x,median=table_median$x,sum_of_steps=table_sum_steps_per_day$x)
+final_table
+```
+
+
+
+## What is the average daily activity pattern?
+```{r}
+interval_means <- aggregate(raw_data$steps,list(raw_data$interval),FUN=mean,na.rm=T)
+plot(y=interval_means$x,type="l",x=interval_means$Group.1,xlab="Interval",ylab="Average no of steps",main="Average Steps per interval across all Days")
+
+interval_max <- interval_means[which.max(interval_means$x),1]
+
+```
+
+The 5-minute interval, that have the __highest average__ across all the days in the dataset, is interval __`r interval_max`__
+
+## Imputing missing values
+```{r}
+no_missing_values <- sum(is.na(raw_data$steps))
+# filling missing intervals with mean
+imputed_data_list <- apply(raw_data,1,function(x) {
+  if(is.na(x[1])) {
+    x[1] <- interval_means[as.integer(interval_means$Group.1)==as.integer(x[3]),2]
+  }
+  return(as.vector(x))
+  } )
+imputed_data_frame <- as.data.frame(apply(imputed_data_list,1,rbind),stringsAsFactors=F)
+colnames(imputed_data_frame) <- c("steps","date","interval")
+imputed_data_frame$steps <- as.numeric(imputed_data_frame$steps)
+imputed_data_frame$date <- as.Date(imputed_data_frame$date,format="%Y-%m-%d")
+imputed_data_frame$interval <- as.integer(imputed_data_frame$interval)
+
+imputed_sum_steps_per_day <-  aggregate(imputed_data_frame$steps,list(imputed_data_frame$date),FUN=sum)
+hist(imputed_sum_steps_per_day$x,main="Histogram for sum of steps per data for imputed data",xlab="sum of steps per day")
+
+imputed_means <- aggregate(imputed_data_frame$steps,list(imputed_data_frame$date),FUN=mean)
+imputed_median <- aggregate(imputed_data_frame$steps,list(imputed_data_frame$date),FUN=median)
+
+
+nrows_imputed_data <- dim(imputed_means)[1]
+type_data <- rep(c("imputed","original"),each=nrows_imputed_data)
+total_mean_data <- cbind(rbind(imputed_means,table_means),type=type_data)
+total_median_data <- cbind(rbind(imputed_median,table_median),type=type_data)
+
+
+  
+```
+
+
+
+Here is the histograms for the imputed data 
+
+```{r}
+
+require(ggplot2)
+ggplot(imputed_sum_steps_per_day, aes(x=x)) + geom_histogram(binwidth=1000, alpha=.5, position="identity") + labs(title="Histogram for imputed sum of steps per day")
+ggplot(total_mean_data, aes(x=x, fill=type,colour=type)) + geom_histogram(binwidth=3, alpha=.5, position="identity") + labs(title="Histogram for original and imputed means")
+ggplot(total_median_data, aes(x=x, fill=type,colour=type)) + geom_histogram(binwidth=3, alpha=.5, position="identity") + labs(title="Histogram original and imputed medians")
+     
+```
+
+
+Here is the imputed mean and median total number of steps taken per day.
+### Imputed mean steps per day
+
+```{r}
+imputed_means
+```
+
+### Imputed median steps per day
+
+```{r}
+imputed_median
+```
+
+Yes there is a difference in some days between the original data and the imputed data.
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+imputed_means_with_weekdata <- imputed_data_frame
+imputed_means_with_weekdata$weekday <- weekdays(imputed_data_frame$date)
+imputed_means_with_weekdata$day_type <- ifelse(imputed_means_with_weekdata$weekday %in% c("Saturday","Sunday"), "Weekend","Weekday") 
+mean_steps_weekdays <- aggregate(imputed_means_with_weekdata$steps,list(imputed_means_with_weekdata$interval,imputed_means_with_weekdata$day_type),FUN=mean)
+colnames(mean_steps_weekdays) <- c("interval","day_type","mean_steps")
+
+require(lattice)
+xyplot(mean_steps~interval|day_type,data=mean_steps_weekdays,layout=c(1,2),type="l",ylab="Mean number of steps")
+```
+
